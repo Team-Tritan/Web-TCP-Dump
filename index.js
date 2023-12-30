@@ -16,7 +16,7 @@ app.get("/start", (req, res) => {
   if (!token || token !== "hushthisistemporary")
     return res.status(401).send("Unauthorized");
 
-  const tcpdumpProcess = spawn("sudo", ["tcpdump", "-l", "-i", "any"]);
+  const tcpdumpProcess = spawn("sudo", ["tcpdump", "-l", "-i", "any", "-v"]);
 
   const connectionId = Date.now().toString();
   activeConnections.set(connectionId, tcpdumpProcess);
