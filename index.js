@@ -2,18 +2,18 @@
 
 const express = require("express");
 const { spawn } = require("child_process");
+const { port, token } = require("./config");
 
 const app = express();
-const port = 3069;
 
 app.use(express.json());
 
 const activeConnections = new Map();
 
 app.get("/start", (req, res) => {
-  let token = req.query.token;
+  let tokenParam = req.query.token;
 
-  if (!token || token !== "hushthisistemporary")
+  if (!tokenParam || tokenParam !== token)
     return res.status(401).send("Unauthorized");
 
   const tcpdumpProcess = spawn("sudo", ["tcpdump", "-l", "-i", "any", "-v"]);
@@ -44,5 +44,5 @@ app.get("/start", (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
+  console.log(`Server is running at :${port}`);
 });
