@@ -2,31 +2,27 @@
 
 const express = require("express");
 const { spawn } = require("child_process");
-const { port, token } = require("./config");
+const { port, token } = require("../config");
 
 const app = express();
+const activeConnections = new Map();
 
 app.use(express.json());
 
-const activeConnections = new Map();
-
 app.get("/start", (req, res) => {
-  let tokenParam = req.query.token;
+  const tokenParam = req.query.token;
 
-  if (!tokenParam || tokenParam !== token)
+  if (!isValidToken(tokenParam)) {
     return res.status(401).send("Unauthorized");
+  }
 
-  const tcpdumpProcess = spawn("sudo", ["tcpdump", "-l", "-i", "any", "-v"]);
+  const tcpdumpProcess = startTcpdumpProcess();
 
   const connectionId = Date.now().toString();
   activeConnections.set(connectionId, tcpdumpProcess);
 
   req.on("close", () => {
-    const process = activeConnections.get(connectionId);
-    if (process) {
-      process.kill();
-      activeConnections.delete(connectionId);
-    }
+    stopTcpdumpProcess(connectionId);
   });
 
   tcpdumpProcess.stdout.on("data", (data) => {
@@ -46,3 +42,19 @@ app.get("/start", (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running at :${port}`);
 });
+
+function isValidToken(tokenParam) {
+  return tokenParam === token;
+}
+
+function startTcpdumpProcess() {
+  return spawn("sudo", ["tcpdump", "-l", "-i", "any", "-v"]);
+}
+
+function stopTcpdumpProcess(connectionId) {
+  const process = activeConnections.get(connectionId);
+  if (process) {
+    process.kill();
+    activeConnections.delete(connectionId);
+  }
+}
